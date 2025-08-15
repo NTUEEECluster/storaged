@@ -1,6 +1,7 @@
 package storaged
 
 import (
+	"errors"
 	"fmt"
 	"os/user"
 	"strings"
@@ -164,21 +165,39 @@ func validateGroupAbsent(groupName string, safePrefix string) error {
 	return nil
 }
 
+func validateProjectName(projectName string) error {
+	if len(projectName) < 3 || len(projectName) > 20 {
+		return errors.New("project name must be between 3 and 20 characters long")
+	}
+	if !isAlphanumeric(projectName) {
+		return errors.New("project name contains unsafe characters")
+	}
+	return nil
+}
+
 func validateGroupName(groupName string, safePrefix string) error {
 	if !strings.HasPrefix(groupName, safePrefix) {
 		return fmt.Errorf("group name %q does not have expected prefix %q", groupName, safePrefix)
 	}
-	for _, v := range strings.TrimPrefix(groupName, safePrefix) {
-		// Only allow alphanumeric identifiers.
+	groupName = strings.TrimPrefix(groupName, safePrefix)
+	if len(groupName) < 3 || len(groupName) > 20 {
+		return errors.New("group name must be between 3 and 20 characters long")
+	}
+	if !isAlphanumeric(groupName) {
+		return errors.New("group name contains unsafe characters")
+	}
+	return nil
+}
+
+func isAlphanumeric(name string) bool {
+	for _, v := range name {
 		switch {
+		case v >= 'A' && v <= 'Z':
 		case v >= 'a' && v <= 'z':
 		case v >= '0' && v <= '9':
 		default:
-			return fmt.Errorf(
-				"group name %q contains unsafe characters",
-				groupName,
-			)
+			return false
 		}
 	}
-	return nil
+	return true
 }

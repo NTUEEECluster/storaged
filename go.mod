@@ -5,6 +5,7 @@ go 1.24.6
 require (
 	github.com/ccin2p3/go-freeipa v1.2.0
 	golang.org/x/sys v0.35.0
+	golang.org/x/time v0.12.0
 )
 
 require (
