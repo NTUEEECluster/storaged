@@ -39,5 +39,5 @@ func main() {
 }
 
 type Config struct {
-	StoragedAddr string `json:"storaged_addr"`
+	StoragedAddr string `toml:"storaged_addr"`
 }

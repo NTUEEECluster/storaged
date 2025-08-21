@@ -53,6 +53,7 @@ func NewQuotaModel(hostURL string, actionDesc string, isDelete bool) quotaModel 
 
 		HostURL:    hostURL,
 		ActionDesc: actionDesc,
+		IsDelete:   isDelete,
 	}
 }
 

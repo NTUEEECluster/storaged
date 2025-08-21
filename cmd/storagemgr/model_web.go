@@ -121,19 +121,22 @@ func (m webRequestModel) doRequest() tea.Msg {
 	mungeBody, err := storaged.Munge(string(m.jsonBody))
 	if err != nil {
 		return webRequestModelResponse{
-			Error: fmt.Errorf("error creating signed request: %w", err),
+			Error:   fmt.Errorf("error creating signed request: %w", err),
+			modelID: m.modelID,
 		}
 	}
 	req, err := http.NewRequest("POST", m.url, strings.NewReader(mungeBody))
 	if err != nil {
 		return webRequestModelResponse{
-			Error: fmt.Errorf("error creating request: %w", err),
+			Error:   fmt.Errorf("error creating request: %w", err),
+			modelID: m.modelID,
 		}
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if resp == nil {
 		return webRequestModelResponse{
-			Error: err,
+			Error:   err,
+			modelID: m.modelID,
 		}
 	}
 	b, err := io.ReadAll(resp.Body)
@@ -141,13 +144,13 @@ func (m webRequestModel) doRequest() tea.Msg {
 		return webRequestModelResponse{
 			StatusCode: resp.StatusCode,
 			Error:      fmt.Errorf("error reading response from server: %w", err),
+			modelID:    m.modelID,
 		}
 	}
 	return webRequestModelResponse{
 		Body:       string(b),
 		StatusCode: resp.StatusCode,
 		Error:      nil,
-
-		modelID: m.modelID,
+		modelID:    m.modelID,
 	}
 }
