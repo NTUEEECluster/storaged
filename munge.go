@@ -12,8 +12,8 @@ import (
 )
 
 // Munge generates a credential with the specified payload and a UID_RESTRICTION for the decryptor.
-func Munge(decryptor string, payload string) (string, error) {
-	cmd := exec.Command("munge", "-u", decryptor, "-s", payload)
+func Munge(payload string) (string, error) {
+	cmd := exec.Command("munge", "-s", payload)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("error running munge: %w", err)
@@ -36,7 +36,7 @@ type MungeOutput struct {
 // returns an error if any of its expectation of the output format is violated.
 func Unmunge(encryptedPayload string) (*MungeOutput, error) {
 	cmd := exec.Command(
-		"unmunge", "-k",
+		"unmunge", "-N", "-k",
 		"ENCODE_HOST,ENCODE_TIME,DECODE_TIME,UID,GID,UID_RESTRICTION",
 	)
 	cmd.Stdin = bytes.NewBufferString(encryptedPayload)
@@ -102,5 +102,6 @@ func Unmunge(encryptedPayload string) (*MungeOutput, error) {
 			)
 		}
 	}
+	parsedOutput.Payload = splitOutput[1]
 	return &parsedOutput, nil
 }

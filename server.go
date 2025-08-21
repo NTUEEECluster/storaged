@@ -1,6 +1,7 @@
 package storaged
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -41,8 +42,8 @@ type ServerConfig struct {
 }
 
 type Allocation struct {
-	Tier     string
-	MaxBytes int
+	Tier     string `toml:"tier"`
+	MaxBytes int    `toml:"max_bytes"`
 }
 
 type clientLimit struct {
@@ -52,8 +53,8 @@ type clientLimit struct {
 
 func (s *Server) Listen(address string) error {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /quota", s.handleCheckQuota)
-	mux.HandleFunc("POST /folders/{name}", s.handleUpdateFolder)
+	mux.HandleFunc("POST /quota", s.handleCheckQuota)
+	mux.HandleFunc("POST /folders", s.handleUpdateFolder)
 	if err := http.ListenAndServe(address, mux); err != nil {
 		return fmt.Errorf("error listening: %w", err)
 	}
@@ -61,8 +62,8 @@ func (s *Server) Listen(address string) error {
 }
 
 func (s *Server) readRequest(writer http.ResponseWriter, req *http.Request, dest any) (submitter *user.User, ok bool) {
-	// We have bigger issues if we run out of.
-	reqBody, err := io.ReadAll(io.LimitReader(req.Body, 1024))
+	// We have bigger issues if the request is larger than 1MB.
+	reqBody, err := io.ReadAll(io.LimitReader(req.Body, 1024*1024))
 	if err != nil {
 		http.Error(writer, "Failed to read your request, try again", http.StatusBadRequest)
 		return nil, false
@@ -115,11 +116,13 @@ func (s *Server) readRequest(writer http.ResponseWriter, req *http.Request, dest
 		)
 		return nil, false
 	}
-	err = json.Unmarshal(mungeOutput.Payload, dest)
+	decoder := json.NewDecoder(bytes.NewReader(mungeOutput.Payload))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(dest)
 	if err != nil {
 		http.Error(
 			writer,
-			"Munge payload was not valid JSON: "+err.Error(),
+			"Munge payload was not valid JSON: "+err.Error()+"\n"+"got: "+string(mungeOutput.Payload),
 			http.StatusBadRequest,
 		)
 		return nil, false

@@ -68,26 +68,26 @@ func (s *Server) handleCheckQuota(writer http.ResponseWriter, req *http.Request)
 		return strings.Compare(a.Name, b.Name)
 	})
 	if len(outputEntries) == 0 {
-		fmt.Fprintf(writer, "User %s has no access to managed storage.\n", checkReq.User)
+		_, _ = fmt.Fprintf(writer, "User %s has no access to managed storage.\n", checkReq.User)
 		return
 	}
-	fmt.Fprintf(writer, "User %s has access to the following tiers:\n\n", checkReq.User)
+	_, _ = fmt.Fprintf(writer, "User %s has access to the following tiers of storage:\n\n", checkReq.User)
 	for _, v := range outputEntries {
-		fmt.Fprintf(
+		_, _ = fmt.Fprintf(
 			writer,
-			"%s - Quota Allocated to Folders: %s/%s\n",
+			"%s - %s assigned / %s allocated\n",
 			v.Name, FormatByteSize(v.UsedQuota), FormatByteSize(v.AllowedQuota),
 		)
 		for _, w := range v.UsageEntries {
-			fmt.Fprintf(
+			_, _ = fmt.Fprintf(
 				writer,
-				"\t%s - %s/%s\n",
+				"\t%s - %s used / %s assigned\n",
 				w.Name, FormatByteSize(w.Usage), FormatByteSize(w.Quota),
 			)
 		}
 	}
 	if folderOmitted {
-		fmt.Fprintln(writer, "\nNote that the smaller folders have been omitted for brevity.")
+		_, _ = fmt.Fprintln(writer, "\nNote that the smaller folders have been omitted for brevity.")
 	}
 }
 

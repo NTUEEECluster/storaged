@@ -34,13 +34,13 @@ func FormatByteSize(byteCount int) string {
 	case byteCount < 0:
 		return "Negative? (Report Bug!)"
 	case byteCount >= tera:
-		return fmt.Sprintf("%.1f T", float64(byteCount)/tera)
+		return fmt.Sprintf("%.1f TB", float64(byteCount)/tera)
 	case byteCount >= giga:
-		return fmt.Sprintf("%.1f G", float64(byteCount)/giga)
+		return fmt.Sprintf("%.1f GB", float64(byteCount)/giga)
 	case byteCount >= mega:
-		return fmt.Sprintf("%.1f M", float64(byteCount)/mega)
+		return fmt.Sprintf("%.1f MB", float64(byteCount)/mega)
 	case byteCount >= kilo:
-		return fmt.Sprintf("%.1f K", float64(byteCount)/kilo)
+		return fmt.Sprintf("%.1f KB", float64(byteCount)/kilo)
 	default:
 		return fmt.Sprintf("%d B", byteCount)
 	}

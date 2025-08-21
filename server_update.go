@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os/user"
+	"strings"
 )
 
 func (s *Server) handleUpdateFolder(writer http.ResponseWriter, req *http.Request) {
@@ -20,10 +21,10 @@ func (s *Server) handleUpdateFolder(writer http.ResponseWriter, req *http.Reques
 		_, _ = fmt.Fprintln(writer, "Check your allocated quota first.")
 		return
 	}
-	err := validateProjectName(updateReq.Name)
+	err := ValidateProjectName(updateReq.Name)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(writer, "Invalid name requested: %s\n", err)
+		_, _ = fmt.Fprintf(writer, "Invalid name requested: %s\n", err)
 		return
 	}
 	sizeInBytes := updateReq.SizeInGB * 1000 * 1000 * 1000
@@ -59,18 +60,15 @@ func (s *Server) attemptAssign(submitter *user.User, updateReq UpdateRequest) (s
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		// Check that the folder does not exist in the main project FS.
-		f, err := s.ProjectFS.Open(updateReq.Name)
+		_, err := fs.Stat(s.ProjectFS, updateReq.Name)
 		switch {
 		case errors.Is(err, fs.ErrNotExist):
 			// This is fine. We will create the folder below.
 			break
-		case err != nil:
-			return http.StatusInternalServerError, "Failed to check project folder existence: " + err.Error()
-		default:
-			defer func() {
-				_ = f.Close()
-			}()
+		case err == nil, strings.Contains(err.Error(), "path escapes"):
 			return http.StatusBadRequest, "Folder " + updateReq.Name + " already exists in another tier."
+		default:
+			return http.StatusInternalServerError, "Failed to check project folder existence: " + err.Error()
 		}
 		currentQuota = 0
 	case err != nil:
@@ -124,11 +122,21 @@ func (s *Server) attemptAssign(submitter *user.User, updateReq UpdateRequest) (s
 	if quotaRequested == 0 {
 		// Delete the folder. We have established ownership above.
 		err := quotaFS.DeleteFolder(updateReq.Name)
-		if err != nil {
+		switch {
+		case err != nil && strings.Contains(err.Error(), "directory not empty"):
+			return http.StatusBadRequest, "Your directory is not empty."
+		case err != nil:
 			return http.StatusInternalServerError, fmt.Sprintf(
 				"Failed to delete folder: %s", err,
 			)
 		}
+		err = s.ProjectFS.DeleteLink(updateReq.Name)
+		if err != nil {
+			return http.StatusInternalServerError, fmt.Sprintf(
+				"Failed to delete link: %s", err,
+			)
+		}
+		return http.StatusOK, "Your project folder has been deleted."
 	}
 	if currentQuota == 0 {
 		// If the folder did not exist previously, create it.

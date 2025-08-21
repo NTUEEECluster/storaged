@@ -165,7 +165,7 @@ func validateGroupAbsent(groupName string, safePrefix string) error {
 	return nil
 }
 
-func validateProjectName(projectName string) error {
+func ValidateProjectName(projectName string) error {
 	if len(projectName) < 3 || len(projectName) > 20 {
 		return errors.New("project name must be between 3 and 20 characters long")
 	}

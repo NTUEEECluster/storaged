@@ -24,6 +24,8 @@ type QuotaFS interface {
 	DeleteFolder(project string) error
 	// NewLink creates a link from the project name to the specified location.
 	CreateLink(project string, absoluteTarget string) error
+	// DeleteLink deletes a link from the project name.
+	DeleteLink(project string) error
 
 	// PathFor returns the absolute path for the specified project.
 	PathFor(project string) string
@@ -94,6 +96,13 @@ func (f *subQuotaFS) CreateLink(filepath, absoluteTarget string) error {
 		return fmt.Errorf("cannot create link of invalid path %s", filepath)
 	}
 	return f.original.CreateLink(path.Join(f.path, filepath), absoluteTarget)
+}
+
+func (f *subQuotaFS) DeleteLink(filepath string) error {
+	if !fs.ValidPath(filepath) {
+		return fmt.Errorf("cannot create link of invalid path %s", filepath)
+	}
+	return f.original.DeleteLink(path.Join(f.path, filepath))
 }
 
 func (f *subQuotaFS) PathFor(project string) string {
