@@ -20,6 +20,7 @@ type webRequestModel struct {
 	Response    *webRequestModelResponse
 	Spinner     spinner.Model
 
+	autoExit bool
 	modelID  int
 	url      string
 	jsonBody string
@@ -69,6 +70,12 @@ func (m webRequestModel) RedoRequest() (webRequestModel, tea.Cmd) {
 	return m, m.doRequest
 }
 
+// AutoExit returns a webRequestModel that automatically exits.
+func (m webRequestModel) AutoExit() webRequestModel {
+	m.autoExit = true
+	return m
+}
+
 func (m webRequestModel) Init() tea.Cmd {
 	return tea.Batch(m.doRequest, m.Spinner.Tick)
 }
@@ -78,8 +85,12 @@ func (m webRequestModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.Spinner, spinnerCmd = m.Spinner.Update(msg)
 	switch msg := msg.(type) {
 	case webRequestModelResponse:
-		if msg.modelID == m.modelID {
-			m.Response = &msg
+		if msg.modelID != m.modelID {
+			break
+		}
+		m.Response = &msg
+		if m.autoExit {
+			return m, tea.Quit
 		}
 	}
 	return m, spinnerCmd

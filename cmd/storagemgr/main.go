@@ -12,7 +12,7 @@ import (
 
 func main() {
 	configLoc := flag.String("config", "/etc/storaged/storagemgr.toml", "Location of config file")
-	userName := flag.String("user", "", "Username to execute as")
+	userName := flag.String("user", "", "Username to retrieve quota for")
 	flag.Parse()
 
 	var config Config
@@ -22,6 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	var p *tea.Program
 	if *userName == "" {
 		currentUser, err := user.Current()
 		if err != nil {
@@ -29,8 +30,11 @@ func main() {
 			os.Exit(1)
 		}
 		userName = &currentUser.Username
+		p = tea.NewProgram(newStorageModel(config.StoragedAddr, *userName))
+	} else {
+		// Just check quota and exit.
+		p = tea.NewProgram(newQuotaRequest(config.StoragedAddr, *userName).AutoExit())
 	}
-	p := tea.NewProgram(newStorageModel(config.StoragedAddr, *userName))
 	_, err = p.Run()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "An unexpected error has occurred:", err)
