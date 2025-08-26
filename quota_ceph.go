@@ -105,10 +105,25 @@ func (fs CephFS) SetQuota(filePath string, maxBytes int) error {
 	return unix.Setxattr("/"+filePath, "ceph.quota.max_bytes", []byte(strconv.Itoa(maxBytes)), 0)
 }
 
-func (fs CephFS) CreateLink(filePath string, absoluteTarget string) error {
-	err := os.Symlink(absoluteTarget, "/"+filePath)
+func (fs CephFS) CreateLink(filePath string, absoluteTarget string, uid, gid string) error {
+	uidNum, err := strconv.Atoi(uid)
+	if err != nil {
+		return fmt.Errorf("error parsing UID %q: %w", uid, err)
+	}
+	gidNum, err := strconv.Atoi(gid)
+	if err != nil {
+		return fmt.Errorf("error parsing GID %q: %w", uid, err)
+	}
+	err = os.Symlink(absoluteTarget, "/"+filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create symlink: %w", err)
+	}
+	// XXX: WTF: If we chown or chmod immediately, Ceph doesn't seem to pick it up.
+	time.Sleep(50 * time.Millisecond)
+	err = os.Lchown("/"+filePath, uidNum, gidNum)
+	if err != nil {
+		_ = os.Remove("/" + filePath)
+		return fmt.Errorf("failed to set ownership on symlink: %w", err)
 	}
 	return nil
 }

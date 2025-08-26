@@ -157,7 +157,10 @@ func (s *Server) attemptAssign(submitter *user.User, updateReq UpdateRequest) (s
 		return http.StatusOK, "Your folder's quota has been updated."
 	}
 	// We need to create the symlink as well.
-	err = s.ProjectFS.CreateLink(updateReq.Name, quotaFS.PathFor(updateReq.Name))
+	err = s.ProjectFS.CreateLink(
+		updateReq.Name, quotaFS.PathFor(updateReq.Name),
+		submitter.Uid, submitter.Gid,
+	)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Sprintf(
 			"Failed to create symlink for folder: %s", err,
