@@ -169,7 +169,7 @@ func ValidateProjectName(projectName string) error {
 	if len(projectName) < 3 || len(projectName) > 20 {
 		return errors.New("project name must be between 3 and 20 characters long")
 	}
-	if !isAlphanumeric(projectName) {
+	if !isWhitelistedName(projectName) {
 		return errors.New("project name contains unsafe characters")
 	}
 	return nil
@@ -183,18 +183,19 @@ func validateGroupName(groupName string, safePrefix string) error {
 	if len(groupName) < 3 || len(groupName) > 20 {
 		return errors.New("group name must be between 3 and 20 characters long")
 	}
-	if !isAlphanumeric(groupName) {
+	if !isWhitelistedName(groupName) {
 		return errors.New("group name contains unsafe characters")
 	}
 	return nil
 }
 
-func isAlphanumeric(name string) bool {
+func isWhitelistedName(name string) bool {
 	for _, v := range name {
 		switch {
 		case v >= 'A' && v <= 'Z':
 		case v >= 'a' && v <= 'z':
 		case v >= '0' && v <= '9':
+		case v == '-':
 		default:
 			return false
 		}
